@@ -52,6 +52,7 @@ class PCA9685_Controller:
         self.channel = channel
 
     def set_pulse(self, pulse):
+        print((self.channel, pulse));
         self.pwm.set_pwm(self.channel, 0, pulse) 
 
 

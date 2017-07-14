@@ -139,7 +139,7 @@ class RemoteClient():
         end = time.time()
         lag = end-start
         self.log('{}, {} \n'.format(datetime.now().time() , lag ))
-        #print('remote lag: %s' %lag)
+        print('remote lag: %s' %lag)
 
         data = json.loads(r.text)
         angle = float(data['angle'])
@@ -356,7 +356,7 @@ class ControlAPI(tornado.web.RequestHandler):
         elif V['drive_mode'] == 'auto':
             angle, throttle  = V['pilot_angle'], V['pilot_throttle']
 
-        print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['drive_mode']), end='')
+        #print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['drive_mode']), end='')
 
 
         if 'session' in V and V['session']:
@@ -570,11 +570,15 @@ class SessionDownload(tornado.web.RequestHandler):
 
 
 class DriveWebSocket(tornado.websocket.WebSocketHandler):
+    from datetime import datetime
 
     def open(self, vehicle_id):
+        self.lastSeen = datetime.now()
         self.vehicle = self.application.get_vehicle(vehicle_id)
 
     def on_message(self, message):
+        print(datetime.now() - self.lastSeen)
+        self.lastSeen = datetime.now()
         V = self.vehicle
         data = tornado.escape.json_decode(message)
         angle = data['angle']
@@ -600,4 +604,6 @@ class DriveWebSocket(tornado.websocket.WebSocketHandler):
             V['user_throttle'] = throttle
         else:
             V['user_throttle'] = 0    
+
+        self.write_message('ok')
 

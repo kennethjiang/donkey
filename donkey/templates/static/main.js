@@ -60,18 +60,19 @@ var driveHandler = (function() {
         hasGamepad = true;
       }
       
+      websocket = new WebSocket(driveURL);
+      websocket.onmessage = deviceOrientationLoop;
       if (window.DeviceOrientationEvent) {
         window.addEventListener("deviceorientation", handleOrientation);
         console.log("Browser supports device orientation, setting control mode to tilt.");
         state.controlMode = 'tilt';
-        deviceOrientationLoop();
+	setTimeout(deviceOrientationLoop, 100);
       } else {
         console.log("Device Orientation not supported by browser, setting control mode to joystick.");
         state.controlMode = 'joystick';
       }
       updateUI();
 
-      websocket = new WebSocket(driveURL);
     };
 
 
@@ -406,16 +407,11 @@ var driveHandler = (function() {
       state.tele.user.angle = newAngle;
     }
     
+    var last = new Date();
     function deviceOrientationLoop () {           
-       setTimeout(function () {    
-          if(!state.brakeOn){
+	    console.log(new Date() - last)
+	    last = new Date()
             postDrive()
-          }
-
-          if (state.controlMode == "tilt") {
-            deviceOrientationLoop(); 
-          }
-       }, 10)
     }
 
     var throttleUp = function(){
