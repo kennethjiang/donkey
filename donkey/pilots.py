@@ -42,14 +42,13 @@ class KerasCategorical(BasePilot):
     def __init__(self, model_path, **kwargs):
         self.model_path = model_path
         self.model = None #load() loads the model
+        self.ewma = 0.0
         super().__init__(**kwargs)
 
 
     def ewma_filter(self,angle):
-        if not self.ewma:
-            self.ewma = angle
-        else:
-            self.ewma = angle*0.4 + self.ewma*(1-0.4)
+        self.ewma = angle*0.4 + self.ewma*(1-0.4)
+        return self.ewma
 
 
     def decide(self, img_arr):
