@@ -12,6 +12,7 @@ import os
 import time
 import itertools
 import numpy as np
+import pandas as pd
 import h5py
 from PIL import Image
 from skimage import exposure
@@ -214,6 +215,50 @@ def batch_generator(img_paths, batch_size=32):
         yield X, Y
 
 
+def smoothen(img_paths):
+    import shutil
+    tmp_dir = "/tmp/dataset"
+    shutil.rmtree(tmp_dir, True)
+    os.mkdir(tmp_dir)
+    img_paths.sort()
+
+    cur_group = [img_paths[0]]
+    groups = [cur_group]
+    last_ctime = os.path.getctime(img_paths[0])
+    for p in img_paths[1:]:
+        if os.path.getctime(p) - last_ctime > 2.0:
+            cur_group = [p]
+            groups.append(cur_group)
+        else:
+            cur_group.append(p)
+
+        last_ctime = os.path.getctime(p)
+
+    groups = [g for g in groups if len(g) > 8]
+    for g in groups:
+        angles = [angle_of_img_path(p) for p in g]
+        smoothened = pd.Series(angles).rolling(window=8, win_type='triang', center=True).mean()
+        for idx, val in enumerate(smoothened):
+            if not pd.isnull(val):
+                fp = g[idx]
+                f = fp.split('/')[-1].split('_')
+                f[5] = str(val)
+                newfn = '_'.join(f)
+                shutil.copyfile(fp, os.path.join(tmp_dir, newfn))
+
+    files = os.listdir(tmp_dir)
+    files = [f for f in files if f[-3:] =='jpg']
+    files.sort()
+    return [os.path.join(tmp_dir, f) for f in files]
+
+def angle_of_img_path(filepath):
+    f = filepath.split('/')[-1]
+    f = f[:-4] #remove ".jpg"
+    f = f.split('_')
+
+    return round(float(f[5]), 2)
+
+
 def load_dataset(img_paths):
     '''
     Returns image arrays and data arrays.
@@ -224,6 +269,7 @@ def load_dataset(img_paths):
 
         Where n is the number of recorded images.
     '''
+    smooth_img_paths = smoothen(img_paths)
     batch_gen = batch_generator(img_paths, batch_size=len(img_paths))
     X, Y = next(batch_gen)
     return X, Y
