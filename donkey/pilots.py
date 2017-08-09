@@ -45,6 +45,13 @@ class KerasCategorical(BasePilot):
         super().__init__(**kwargs)
 
 
+    def ewma_filter(self,angle):
+        if not self.ewma:
+            self.ewma = angle
+        else:
+            self.ewma = angle*0.4 + self.ewma*(1-0.4)
+
+
     def decide(self, img_arr):
         if not self.model:
             self.load()
@@ -52,7 +59,7 @@ class KerasCategorical(BasePilot):
         angle_binned, throttle = self.model.predict(img_arr)
         angle_certainty = max(angle_binned[0])
         angle_unbinned = utils.unbin_Y(angle_binned)
-        return angle_unbinned[0], throttle[0][0]
+        return self.ewma_filter(angle_unbinned[0]), throttle[0][0]
 
 
     def load(self):
