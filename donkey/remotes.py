@@ -64,7 +64,7 @@ def control(application, vehicle_id='mycar'):
     
         # print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['drive_mode']), end='')
     
-        angle = angle * float(V['angle_multiplier'])
+        angle = angle * float(V.get('angle_multiplier', '1.0'))
     
         if 'session' in V and V['session']:
             #save image with encoded angle/throttle values
