@@ -65,6 +65,12 @@ def control(application, vehicle_id='mycar'):
         # print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['drive_mode']), end='')
     
         angle = angle * float(V.get('angle_multiplier', '1.0'))
+        if angle > 1.0:
+            print('overflow - ' + str(angle))
+            angle = 1.0
+        if angle < -1.0:
+            print('overflow - ' + str(angle))
+            angle = -1.0
     
         if 'session' in V and V['session']:
             #save image with encoded angle/throttle values
@@ -575,7 +581,7 @@ class DriveWebSocket(tornado.websocket.WebSocketHandler):
 
         #update vehicle angel based on drive mode
         V['drive_mode'] = data['drive_mode']
-        V['angle_multipler'] = data['angle_multiplier']
+        V['angle_multiplier'] = data['angle_multiplier']
 
         if angle is not "":
             V['user_angle'] = angle
