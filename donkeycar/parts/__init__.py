@@ -13,6 +13,7 @@ from .actuators.actuators import MockController
 
 from .controllers.web import LocalWebController
 from .controllers.joystick import JoystickPilot
+from .controllers.bluetooth import BluetoothController
 
 from .sensors.cameras import PiCamera
 from .sensors.cameras import MockCamera
