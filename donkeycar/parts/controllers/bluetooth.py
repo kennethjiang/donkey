@@ -76,5 +76,5 @@ class BluetoothController:
 
 
     def run_threaded(self, img_arr=None):
-        print("{0}, {1}, {2}, {3}".format(self.angle, self.throttle, self.mode, self.recording))
+        print("{0}, {1}, {2}, {3}".format(float(self.angle), float(self.throttle), self.mode, self.recording.lower() == 'true'))
         return float(self.angle), float(self.throttle), self.mode, self.recording.lower() == 'true'
