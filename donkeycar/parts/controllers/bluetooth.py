@@ -58,6 +58,19 @@ class BluetoothController:
                     buf = StringIO.StringIO(msg.decode('utf-8'))
                     (self.steering, self.throttle, self.mode, self.recording) = buf.readline().split(',')
 
+	        except IOError:
+	            pass
+
+	        except KeyboardInterrupt:
+
+	            if client_sock is not None:
+	                client_sock.close()
+
+	            server_sock.close()
+
+	            print("Server going down")
+	            break
+
 
     def run_threaded(self, img_arr=None):
         return float(self.angle), float(self.throttle), self.mode, self.recording.lower() == 'true'
