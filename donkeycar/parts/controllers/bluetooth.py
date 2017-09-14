@@ -45,31 +45,31 @@ class BluetoothController:
 
         while True:
             print("Waiting for connection on RFCOMM channel %d" % port)
-	        try:
-	            client_sock = None
+            try:
+                client_sock = None
 
-	            # This will block until we get a new connection
-	            client_sock, client_info = server_sock.accept()
-            	print("Connected from ", client_info)
+                # This will block until we get a new connection
+                client_sock, client_info = server_sock.accept()
+                print("Connected from ", client_info)
 
-	            while True:
-	                # Read the data sent by the client
-	                data = client_sock.recv(1024)
+                while True:
+                    # Read the data sent by the client
+                    data = client_sock.recv(1024)
                     buf = StringIO.StringIO(msg.decode('utf-8'))
                     (self.steering, self.throttle, self.mode, self.recording) = buf.readline().split(',')
 
-	        except IOError:
-	            pass
+            except IOError:
+                pass
 
-	        except KeyboardInterrupt:
+            except KeyboardInterrupt:
 
-	            if client_sock is not None:
-	                client_sock.close()
+                if client_sock is not None:
+                    client_sock.close()
 
-	            server_sock.close()
+                server_sock.close()
 
-	            print("Server going down")
-	            break
+                print("Server going down")
+                break
 
 
     def run_threaded(self, img_arr=None):
