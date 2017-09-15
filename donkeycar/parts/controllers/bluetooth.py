@@ -24,28 +24,29 @@ class BluetoothController:
         # We need to wait until Bluetooth init is done
         time.sleep(5)
 
-        # Make device visible
-        print('Starting Donkey Bluetooth Server...')
-        os.system("hciconfig hci0 piscan")
-
-        # Create a new server socket using RFCOMM protocol
-        server_sock = BluetoothSocket(RFCOMM)
-        # Bind to any port
-        server_sock.bind(("", PORT_ANY))
-        # Start listening
-        server_sock.listen(1)
-
-        # Get the port the server socket is listening
-        port = server_sock.getsockname()[1]
-
-        # Start advertising the service
-        advertise_service(server_sock, 
-                           BluetoothController.BT_SERVICE_NAME,
-                           service_id=BluetoothController.bt_uuid,
-                           service_classes=[BluetoothController.bt_uuid, SERIAL_PORT_CLASS],
-                           profiles=[SERIAL_PORT_PROFILE])
-
         while True:
+
+            # Make device visible
+            print('Starting Donkey Bluetooth Server...')
+            os.system("hciconfig hci0 piscan")
+
+            # Create a new server socket using RFCOMM protocol
+            server_sock = BluetoothSocket(RFCOMM)
+            # Bind to any port
+            server_sock.bind(("", PORT_ANY))
+            # Start listening
+            server_sock.listen(1)
+
+            # Get the port the server socket is listening
+            port = server_sock.getsockname()[1]
+
+            # Start advertising the service
+            advertise_service(server_sock,
+                               BluetoothController.BT_SERVICE_NAME,
+                               service_id=BluetoothController.bt_uuid,
+                               service_classes=[BluetoothController.bt_uuid, SERIAL_PORT_CLASS],
+                               profiles=[SERIAL_PORT_PROFILE])
+
             print("Waiting for connection on RFCOMM channel %d" % port)
             try:
                 client_sock = None
@@ -53,6 +54,7 @@ class BluetoothController:
                 # This will block until we get a new connection
                 client_sock, client_info = server_sock.accept()
                 print("Connected from ", client_info)
+                stop_advertising(server_sock)
 
                 while True:
                     # Read the data sent by the client
@@ -61,10 +63,7 @@ class BluetoothController:
                     buf = StringIO(data.decode('utf-8'))
                     (self.angle, self.throttle, self.mode, self.recording) = buf.readline().strip().split(',')
 
-            except IOError:
-                pass
-
-            except KeyboardInterrupt:
+            except:
 
                 if client_sock is not None:
                     client_sock.close()
