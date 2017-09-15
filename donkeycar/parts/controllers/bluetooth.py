@@ -53,25 +53,20 @@ class BluetoothController:
 
                 # This will block until we get a new connection
                 client_sock, client_info = server_sock.accept()
+                client_sock.settimeout(3.0)  # 3s timeout
                 print("Connected from ", client_info)
                 stop_advertising(server_sock)
 
                 while True:
                     # Read the data sent by the client
                     data = client_sock.recv(1024)
-                    #import pdb; pdb.set_trace()
                     buf = StringIO(data.decode('utf-8'))
                     (self.angle, self.throttle, self.mode, self.recording) = buf.readline().strip().split(',')
 
             except:
-
                 if client_sock is not None:
                     client_sock.close()
-
                 server_sock.close()
-
-                print("Server going down")
-                break
 
 
     def run_threaded(self, img_arr=None):
