@@ -23,11 +23,11 @@ class BluetoothController:
 
         # We need to wait until Bluetooth init is done
         time.sleep(5)
+        print('Starting Donkey Bluetooth Server...')
 
         while True:
 
             # Make device visible
-            print('Starting Donkey Bluetooth Server...')
             os.system("hciconfig hci0 piscan")
 
             # Create a new server socket using RFCOMM protocol
