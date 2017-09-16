@@ -221,3 +221,8 @@ def param_gen(params):
     '''
     for p in itertools.product(*params.values()):
         yield dict(zip(params.keys(), p ))
+
+def mask_image_array(img, mask):
+    alpha_channel = np.array(mask)[:,:,[3]]
+    final_mask = np.concatenate((alpha_channel,)*3, axis=2)
+    return img | final_mask

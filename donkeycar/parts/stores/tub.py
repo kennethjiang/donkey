@@ -15,6 +15,7 @@ import random
 from PIL import Image
 
 import numpy as np
+from ... import utils
 
 
 class Tub():
@@ -37,6 +38,10 @@ class Tub():
 
         self.path = os.path.expanduser(path)
         self.meta_path = os.path.join(self.path, 'meta.json')
+        mask_path = os.path.join(os.path.expanduser(path), '../../mask.png')
+        self.mask = None
+        if os.path.isfile(mask_path):
+            self.mask = np.array(Image.open(mask_path))
 
         exists = os.path.exists(self.path)
 
@@ -165,6 +170,8 @@ class Tub():
             elif typ == 'image_array':
                 img = Image.open(os.path.join(self.path, val))
                 val = np.array(img)
+                if self.mask is not None:
+                    val = utils.mask_image_array(val, self.mask)
 
             data[key] = val
 
