@@ -1,6 +1,7 @@
 import time
 import numpy as np
 from PIL import Image
+from ... import utils
 
 class BaseCamera:
 
@@ -27,6 +28,10 @@ class PiCamera(BaseCamera):
 
         print('PiCamera loaded.. .warming camera')
         time.sleep(2)
+        mask_path = os.path.join(os.path.expanduser('donkeycar/d2'), 'mask.png')
+        self.mask = None
+        if os.path.isfile(mask_path):
+            self.mask = np.array(Image.open(mask_path))
 
 
     def update(self):
@@ -35,6 +40,8 @@ class PiCamera(BaseCamera):
             # grab the frame from the stream and clear the stream in
             # preparation for the next frame
             self.frame = f.array
+            if self.mask is not None:
+                self.frame = utils.mask_image_array(self.frame, self.mask)
             self.rawCapture.truncate(0)
 
             # if the thread indicator variable is set, stop the thread
