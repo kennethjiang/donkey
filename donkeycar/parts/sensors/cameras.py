@@ -1,4 +1,5 @@
 import time
+import os
 import numpy as np
 from PIL import Image
 from ... import utils
@@ -28,7 +29,7 @@ class PiCamera(BaseCamera):
 
         print('PiCamera loaded.. .warming camera')
         time.sleep(2)
-        mask_path = os.path.join(os.path.expanduser('donkeycar/d2'), 'mask.png')
+        mask_path = os.path.join('/home/pi/donkeycar/d2', 'mask.png')
         self.mask = None
         if os.path.isfile(mask_path):
             self.mask = np.array(Image.open(mask_path))
