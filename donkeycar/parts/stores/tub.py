@@ -16,7 +16,7 @@ from PIL import Image
 
 import numpy as np
 from ... import utils
-
+from donkeycar.config import load_config
 
 class Tub(object):
     """
@@ -38,7 +38,8 @@ class Tub(object):
 
         self.path = os.path.expanduser(path)
         self.meta_path = os.path.join(self.path, 'meta.json')
-        mask_path = os.path.join(os.path.expanduser(path), '../../mask.png')
+        cfg = load_config()
+        mask_path = os.path.join(cfg.CAR_PATH, 'mask.png')
         self.mask = None
         if os.path.isfile(mask_path):
             self.mask = np.array(Image.open(mask_path))

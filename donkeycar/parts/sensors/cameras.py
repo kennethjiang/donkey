@@ -5,6 +5,8 @@ import numpy as np
 from PIL import Image
 import glob
 
+from donkeycar.config import load_config
+
 class BaseCamera:
 
     def run_threaded(self):
@@ -30,7 +32,8 @@ class PiCamera(BaseCamera):
 
         print('PiCamera loaded.. .warming camera')
         time.sleep(2)
-        mask_path = os.path.join('/home/pi/donkeycar/d2', 'mask.png')
+        cfg = load_config()
+        mask_path = os.path.join(cfg.CAR_PATH, 'mask.png')
         self.mask = None
         if os.path.isfile(mask_path):
             self.mask = np.array(Image.open(mask_path))
