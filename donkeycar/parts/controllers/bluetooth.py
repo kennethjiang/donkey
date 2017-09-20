@@ -64,6 +64,10 @@ class BluetoothController:
                     (self.angle, self.throttle, self.mode, self.recording) = buf.readline().strip().split(',')
 
             except:
+                self.angle = 0.
+                self.throttle = 0.
+                self.mode = 'user'
+                self.recording = 'false'
                 if client_sock is not None:
                     client_sock.close()
                 server_sock.close()
