@@ -53,7 +53,7 @@ class BluetoothController:
 
                 # This will block until we get a new connection
                 client_sock, client_info = server_sock.accept()
-                client_sock.settimeout(3.0)  # 3s timeout
+                client_sock.settimeout(10.0)  # 3s timeout
                 print("Connected from ", client_info)
                 stop_advertising(server_sock)
 
