@@ -4,6 +4,7 @@ import os
 import numpy as np
 from PIL import Image
 import glob
+from ... import utils
 
 from donkeycar.config import load_config
 
