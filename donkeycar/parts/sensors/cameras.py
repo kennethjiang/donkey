@@ -1,12 +1,8 @@
 import os
 import time
-import os
 import numpy as np
 from PIL import Image
 import glob
-from ... import utils
-
-from donkeycar.config import load_config
 
 class BaseCamera:
 
@@ -33,22 +29,13 @@ class PiCamera(BaseCamera):
 
         print('PiCamera loaded.. .warming camera')
         time.sleep(2)
-        cfg = load_config()
-        mask_path = os.path.join(cfg.CAR_PATH, 'mask.png')
-        self.mask = None
-        if os.path.isfile(mask_path):
-            self.mask = np.array(Image.open(mask_path))
-
 
     def update(self):
         # keep looping infinitely until the thread is stopped
         for f in self.stream:
             # grab the frame from the stream and clear the stream in
             # preparation for the next frame
-            if self.mask is not None:
-                self.frame = utils.mask_image_array(f.array, self.mask)
-            else:
-                self.frame = f.array
+            self.frame = f.array
             self.rawCapture.truncate(0)
 
             # if the thread indicator variable is set, stop the thread

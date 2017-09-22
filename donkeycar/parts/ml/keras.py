@@ -14,15 +14,24 @@ models to help direct the vehicles motion.
 
 import os
 import numpy as np
+from PIL import Image
 import keras
 from ... import utils
+from donkeycar.config import load_config
 
 
 import donkeycar as dk
 from donkeycar import utils
 
 class KerasPilot():
- 
+
+    def __init__(self):
+        cfg = load_config()
+        mask_path = os.path.join(cfg.CAR_PATH, 'mask.png')
+        self.mask = None
+        if os.path.isfile(mask_path):
+            self.mask = np.array(Image.open(mask_path))
+
     def load(self, model_path):
         self.model = keras.models.load_model(model_path)
     
@@ -71,6 +80,9 @@ class KerasCategorical(KerasPilot):
             self.model = default_categorical()
         
     def run(self, img_arr):
+        if self.mask is not None:
+            img_arr = utils.mask_image_array(img_arr, self.mask)
+
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle_binned, throttle = self.model.predict(img_arr)
         #angle_certainty = max(angle_binned[0])
@@ -87,6 +99,9 @@ class KerasLinear(KerasPilot):
         else:
             self.model = default_linear()
     def run(self, img_arr):
+        if self.mask is not None:
+            img_arr = utils.mask_image_array(img_arr, self.mask)
+
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle, throttle = self.model.predict(img_arr)
         #angle_certainty = max(angle_binned[0])
