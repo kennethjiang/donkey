@@ -152,6 +152,8 @@ def default_linear():
     x = Dropout(.1)(x)
     x = Dense(50, activation='linear')(x)
     x = Dropout(.1)(x)
+    x = Dense(10, activation='linear')(x)
+    x = Dropout(.1)(x)
     #categorical output of the angle
     angle_out = Dense(1, activation='linear', name='angle_out')(x)
     
