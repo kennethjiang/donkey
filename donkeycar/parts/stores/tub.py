@@ -11,6 +11,7 @@ import time
 import json
 import datetime
 import random
+from donkeycar.tools.fisheye_undistort import undistort
 
 from PIL import Image
 
@@ -171,6 +172,7 @@ class Tub(object):
                 val = np.array(img)
                 if self.mask is not None:
                     val = utils.mask_image_array(val, self.mask)
+                val = undistort(val, balance=0.6)
 
             data[key] = val
 
