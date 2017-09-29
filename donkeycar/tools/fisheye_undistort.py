@@ -9,7 +9,7 @@ DIM=(1600, 1200)
 K=np.array([[781.3524863867165, 0.0, 794.7118000552183], [0.0, 779.5071163774452, 561.3314451453386], [0.0, 0.0, 1.0]])
 D=np.array([[-0.042595202508066574], [0.031307765215775184], [-0.04104704724832258], [0.015343014605793324]])
 
-def undistort_maps(img):
+def undistort_maps(img, balance):
     h,w = img.shape[:2]
 
     assert w/h == DIM[0]/DIM[1], "Image to undistort needs to have same aspect ratio as the ones used in calibration"
