@@ -18,6 +18,7 @@ from PIL import Image
 import keras
 from ... import utils
 from donkeycar.config import load_config
+from donkeycar.tools.fisheye_undistort import undistort
 
 
 import donkeycar as dk
@@ -82,6 +83,7 @@ class KerasCategorical(KerasPilot):
     def run(self, img_arr):
         if self.mask is not None:
             img_arr = utils.mask_image_array(img_arr, self.mask)
+        img_arr = undistort(img_arr, balance=0.6)
 
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle_binned, throttle = self.model.predict(img_arr)
@@ -101,6 +103,7 @@ class KerasLinear(KerasPilot):
     def run(self, img_arr):
         if self.mask is not None:
             img_arr = utils.mask_image_array(img_arr, self.mask)
+        img_arr = undistort(img_arr, balance=0.6)
 
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle, throttle = self.model.predict(img_arr)
