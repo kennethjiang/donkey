@@ -38,7 +38,7 @@ class KerasPilot():
     
     
     def train(self, train_gen, val_gen, 
-              saved_model_path, epochs=100, steps=100, ):
+              saved_model_path, epochs=100, steps=100, train_split=0.8):
         
         """
         train_gen: generator that yields an array of images an array of 
@@ -68,7 +68,7 @@ class KerasPilot():
                         verbose=1, 
                         validation_data=val_gen,
                         callbacks=callbacks_list, 
-                        validation_steps=steps*.2)
+                        validation_steps=steps*(1.0 - train_split))
         return hist
 
 
@@ -181,10 +181,10 @@ def default_linear():
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
     
     
-    model.compile(optimizer='rmsprop',
+    model.compile(optimizer='adam',
                   loss={'angle_out': 'mean_squared_error', 
                         'throttle_out': 'mean_squared_error'},
-                  loss_weights={'angle_out': 0.9, 'throttle_out': .001})
+                  loss_weights={'angle_out': 0.5, 'throttle_out': .5})
 
     return model
 
