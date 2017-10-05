@@ -47,7 +47,7 @@ def compile_saliency_function(model, activation_layer='conv2d_5'):
     saliency = K.gradients(K.sum(max_output), input_img)[0]
     return K.function([input_img, K.learning_phase()], [saliency])
 
-def modify_backprop(model, name):
+def modify_backprop(model, name, modelpath):
     g = tf.get_default_graph()
     with g.gradient_override_map({'Relu': name}):
 
@@ -113,6 +113,31 @@ def mix_heatmap(img, heatmap):
     cam = np.uint8(cam)
     return cam
 
+
+def deprocess_image(x):
+    '''
+    Same normalization as in:
+    https://github.com/fchollet/keras/blob/master/examples/conv_filter_visualization.py
+    '''
+    if np.ndim(x) > 3:
+        x = np.squeeze(x)
+    # normalize tensor: center on 0., ensure std is 0.1
+    x -= x.mean()
+    x /= (x.std() + 1e-5)
+    x *= 0.1
+
+    # clip to [0, 1]
+    x += 0.5
+    x = np.clip(x, 0, 1)
+
+    # convert to RGB array
+    x *= 255
+    if K.image_dim_ordering() == 'th':
+        x = x.transpose((1, 2, 0))
+    x = np.clip(x, 0, 255).astype('uint8')
+    return x
+
+
 def gradcam_video(cfg, tub_path, model_path, out):
     temp_dir = tempfile.mkdtemp()
     if shutil.which('ffmpeg') is None:
@@ -122,6 +147,8 @@ def gradcam_video(cfg, tub_path, model_path, out):
     try:
         model = load_model(model_path)
         tub = dk.parts.Tub(os.path.join(cfg.DATA_PATH, tub_path))
+        register_gradient()
+        guided_model = modify_backprop(model, 'GuidedBackProp', model_path)
     
         idx = tub.get_index(shuffled=False)
         for i in range(len(idx)):
@@ -132,9 +159,12 @@ def gradcam_video(cfg, tub_path, model_path, out):
             predicted_class = np.argmax(predicted_angle[0])
             cam, heatmap = grad_cam(model, img_in, predicted_class, 'conv2d_5')
             if (i % 100 == 0): print('Processing %.2f% ...'.format(i*100./len(idx)))
-            img = mix_heatmap(img_in, heatmap)
-            img = cv2.resize(img, (0, 0), fx = 4, fy = 4, interpolation = cv2.INTER_LINEAR)
-            cv2.imwrite(os.path.join(temp_dir, '{0:06d}.jpg'.format(i)), img)
+
+            saliency_fn = compile_saliency_function(guided_model)
+            saliency = saliency_fn([img_in, 0])
+            gradcam = saliency[0] * heatmap[..., np.newaxis]
+            #new_img = cv2.resize(cam, (0, 0), fx = 4, fy = 4, interpolation = cv2.INTER_LINEAR)
+            cv2.imwrite(os.path.join(temp_dir, '{0:06d}.jpg'.format(i)), deprocess_image(gradcam))
 
         print("Generate Grad-CAM video {} ...".format(out))
         call("ffmpeg -i {}/%06d.jpg -vf fps=25 {}".format(temp_dir, out).split())
