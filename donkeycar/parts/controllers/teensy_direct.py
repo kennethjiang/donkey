@@ -4,6 +4,8 @@
 import os
 import json
 import time
+import threading
+import serial
 
 import requests
 
@@ -15,13 +17,14 @@ from ... import utils
 
 
 class TeensyDirectController():
-    import threading
     
     def __init__(self, angle_pwm_neutral=1500, throttle_pwm_neutral=1500):
 
         self.lock = threading.RLock()
-        self.serial_bus = = serial.Serial('/dev/ttyACM0', 115200, timeout = 0.05)
+        self.serial_bus = serial.Serial('/dev/ttyACM0', 115200, timeout = 0.05)
 
+        self.angle_pwm_in = angle_pwm_neutral
+        self.throttle_pwm_in = throttle_pwm_neutral
         self.angle_pwm_out = angle_pwm_neutral
         self.throttle_pwm_out = throttle_pwm_neutral
         self.mode = 'user'
@@ -33,28 +36,31 @@ class TeensyDirectController():
         msg_in_thread.daemon = True
         msg_in_thread.start()
 
-        msg_out_thread = threading.Thread(target=self.message_out_loop)
-        msg_out_thread.daemon = True
-        msg_out_thread.start()
+        #msg_out_thread = threading.Thread(target=self.message_out_loop)
+        #msg_out_thread.daemon = True
+        #msg_out_thread.start()
+        self.message_out_loop()
 
 
-    def run_threaded(self):
+    def run_threaded(self, what):
         ''' 
         Return the last state given from the remote server.
         '''
         
         #return last returned last remote response.
-        return self.angle, self.throttle, self.mode, self.recording
+        #return self.angle, self.throttle, self.mode, self.recording
+        return 0, 0, 'user', False
 
     def message_in_loop(self):
         while True:
             line = self.serial_bus.readline().strip()
 
             with self.lock:
-                if line.startswith('S'):
+                if line.startswith(b'S'):
                     self.angle_pwm_in = int(line[1:])
-                if line.startswith('T'):
+                if line.startswith(b'T'):
                     self.throttle_pwm_in = int(line[1:])
+
                 if self.mode == 'user':
                     self.angle_pwm_out = self.angle_pwm_in
                     self.throttle_pwm_out = self.throttle_pwm_in

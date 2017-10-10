@@ -47,7 +47,9 @@ def drive(cfg, model_path=None, use_joystick=False):
     else:        
         #This web controller will create a web server that is capable
         #of managing steering, throttle, and modes, and more.
-        ctr = dk.parts.LocalWebController()
+        #ctr = dk.parts.LocalWebController()
+        from donkeycar.parts.controllers import teensy_direct
+        ctr = teensy_direct.TeensyDirectController()
 
     
     V.add(ctr, 
@@ -96,12 +98,11 @@ def drive(cfg, model_path=None, use_joystick=False):
           outputs=['angle', 'throttle'])
     
     
-    teensy = dk.parts.actuators.actuators.TeensyDirect()
-    steering = dk.parts.actuators.actuators.TeensyDirectSteering(teensy=teensy,
+    steering = dk.parts.actuators.actuators.TeensyDirectSteering(teensy=None,
                                     left_pulse=cfg.STEERING_LEFT_PWM, 
                                     right_pulse=cfg.STEERING_RIGHT_PWM)
     
-    steering = dk.parts.actuators.actuators.TeensyDirectThrottle(teensy=teensy,
+    throttle = dk.parts.actuators.actuators.TeensyDirectThrottle(teensy=None,
                                     max_pulse=cfg.THROTTLE_FORWARD_PWM,
                                     zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
                                     min_pulse=cfg.THROTTLE_REVERSE_PWM)

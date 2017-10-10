@@ -310,11 +310,10 @@ class Teensy:
 
         return ret
 
+
 '''
 Teensy PWM using classic servo protocol. roughly 1000-2000 us pulse width. 1500 us is netural.
 '''
-
-class TeensyDirect:
 
 class TeensyDirectThrottle:
     def __init__(self, teensy=None,
@@ -322,7 +321,6 @@ class TeensyDirectThrottle:
                        min_pulse=490,
                        zero_pulse=350):
 
-        self.controller = controller
         self.max_pulse = max_pulse
         self.min_pulse = min_pulse
         self.zero_pulse = zero_pulse
