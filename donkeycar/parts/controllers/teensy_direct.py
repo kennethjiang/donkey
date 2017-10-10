@@ -21,14 +21,17 @@ class TeensyDirectController():
     def __init__(self, angle_pwm_neutral=1500, throttle_pwm_neutral=1500):
 
         self.lock = threading.RLock()
-        self.serial_bus = serial.Serial('/dev/ttyACM0', 115200, timeout = 0.05)
+        #self.serial_bus = serial.Serial('/dev/ttyACM0', 115200, timeout = 0.05)
 
         self.angle_pwm_in = angle_pwm_neutral
         self.throttle_pwm_in = throttle_pwm_neutral
+        self.max_throttle = 0.25
+        self.drive_mode = 'user'
+        self.recording = False
+
+		#Critical sections that should be guarded by lock
         self.angle_pwm_out = angle_pwm_neutral
         self.throttle_pwm_out = throttle_pwm_neutral
-        self.mode = 'user'
-        self.recording = False
 
         
     def update(self):
@@ -36,10 +39,11 @@ class TeensyDirectController():
         msg_in_thread.daemon = True
         msg_in_thread.start()
 
-        #msg_out_thread = threading.Thread(target=self.message_out_loop)
-        #msg_out_thread.daemon = True
-        #msg_out_thread.start()
-        self.message_out_loop()
+        msg_out_thread = threading.Thread(target=self.message_out_loop)
+        msg_out_thread.daemon = True
+        msg_out_thread.start()
+
+        TeensyWebServer(self).start()
 
 
     def run_threaded(self, what):
@@ -70,14 +74,18 @@ class TeensyDirectController():
             with self.lock:
                 angle_pwm = self.angle_pwm_out
                 throttle_pwm = self.throttle_pwm_out
-            self.serial_bus.write(('S' + str(angle_pwm) + '\n').encode())
-            self.serial_bus.write(('T' + str(throttle_pwm) + '\n').encode())
+
+            a = 'S' + str(angle_pwm) + '\n'; 
+            print("OUT: " + a)
+            t = 'T' + str(throttle_pwm) + '\n'
+            print("OUT: " + t)
+            self.serial_bus.write(a.encode())
+            self.serial_bus.write(t.encode())
 
 
 class TeensyWebServer(tornado.web.Application):
 
-    def __init__(self):
-        print('Starting Donkey Server...')
+    def __init__(self, controller):
 
         this_dir = os.path.dirname(os.path.realpath(__file__))
         self.static_file_path = os.path.join(this_dir, 'templates', 'static')
@@ -89,7 +97,8 @@ class TeensyWebServer(tornado.web.Application):
 
         handlers = [
             (r"/", tornado.web.RedirectHandler, dict(url="/drive")),
-            (r"/drive", DriveAPI),
+            (r"/drive", DriveHandler),
+			(r"/api/drive", DriveApi, dict(controller=controller)),
             (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": self.static_file_path}),
             ]
 
@@ -97,9 +106,8 @@ class TeensyWebServer(tornado.web.Application):
 
         super().__init__(handlers, **settings)
 
-    def update(self, port=8887):
-        ''' Start the tornado webserver. '''
-        print(port)
+    def start(self, port=8887):
+        print('Starting Donkey Server on part {0}...'.format(port))
         self.port = int(port)
         self.listen(self.port)
         tornado.ioloop.IOLoop.instance().start()
@@ -114,21 +122,32 @@ class TeensyWebServer(tornado.web.Application):
         return self.angle, self.throttle, self.mode, self.recording
 
 
-class DriveAPI(tornado.web.RequestHandler):
+class DriveHandler(tornado.web.RequestHandler):
 
     def get(self):
         data = {}
-        self.render("templates/vehicle.html", **data)
-    
-    
+        self.render("templates/drive.html", **data)
+
+
+class DriveApi(tornado.web.RequestHandler):
+
+    def initialize(self, controller):
+        self.controller = controller
+
+    def respond_with_json(self):
+        self.write(json.dumps({
+            'max_throttle': str(self.controller.max_throttle),
+            'recording': self.controller.recording,
+            'drive_mode': self.controller.drive_mode
+            }))
+
+    def get(self):
+        self.respond_with_json()
+
     def post(self):
-        '''
-        Receive post requests as user changes the angle
-        and throttle of the vehicle on a the index webpage
-        '''
         data = tornado.escape.json_decode(self.request.body)
-        self.application.angle = data['angle']
-        self.application.throttle = data['throttle']
-        self.application.mode = data['drive_mode']
-        self.application.recording = data['recording']
+        self.controller.drive_mode = data['drive_mode']
+        self.controller.max_throttle = data['max_throttle']
+        self.controller.recording = data['recording']
+        self.respond_with_json()
 
