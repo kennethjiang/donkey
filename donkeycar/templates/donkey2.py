@@ -96,13 +96,12 @@ def drive(cfg, model_path=None, use_joystick=False):
           outputs=['angle', 'throttle'])
     
     
-    steering_controller = dk.parts.PCA9685(cfg.STEERING_CHANNEL)
-    steering = dk.parts.PWMSteering(controller=steering_controller,
+    teensy = dk.parts.actuators.actuators.TeensyDirect()
+    steering = dk.parts.actuators.actuators.TeensyDirectSteering(teensy=teensy,
                                     left_pulse=cfg.STEERING_LEFT_PWM, 
                                     right_pulse=cfg.STEERING_RIGHT_PWM)
     
-    throttle_controller = dk.parts.PCA9685(cfg.THROTTLE_CHANNEL)
-    throttle = dk.parts.PWMThrottle(controller=throttle_controller,
+    steering = dk.parts.actuators.actuators.TeensyDirectThrottle(teensy=teensy,
                                     max_pulse=cfg.THROTTLE_FORWARD_PWM,
                                     zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
                                     min_pulse=cfg.THROTTLE_REVERSE_PWM)
