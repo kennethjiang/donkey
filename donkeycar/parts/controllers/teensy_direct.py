@@ -61,6 +61,12 @@ class TeensyDirectController():
         else:
             return utils.map_range(angle, 0, -1, self.steering_neutral_pwm, self.steering_left_pwm)
 
+    def pwm_to_value(self, pwm, pwm_min, pwm_neutral, pwm_max):
+        if (pwm-pwm_neutral) * (pwm_min-pwm_neutral) > 0: #pwm is between min and neutral
+            return utils.map_range(pwm, pwm_neutral, pwm_min, 0, -1)
+        else:
+            return utils.map_range(pwm, pwm_neutral, pwm_max, 0, 1)
+
     def update(self):
         msg_in_thread = threading.Thread(target=self.message_in_loop)
         msg_in_thread.daemon = True
@@ -74,27 +80,26 @@ class TeensyDirectController():
 
 
     def run_threaded(self, img_in):
-        ''' 
-        Return the last state given from the remote server.
-        '''
-        
-        #return last returned last remote response.
-        #return self.angle, self.throttle, self.mode, self.recording
-        return 0.1, 0.1, self.drive_mode, self.recording
+        with self.lock:
+            steering = self.pwm_to_value(self.steering_pwm_out, self.steering_left_pwm, self.steering_neutral_pwm, self.steering_right_pwm)
+            throttle = self.pwm_to_value(self.throttle_pwm_out, self.throttle_reverse_pwm, self.throttle_stopped_pwm, self.throttle_forward_pwm)
+
+        return steering, throttle, self.drive_mode, self.recording
 
     def message_in_loop(self):
         while True:
             line = self.serial_bus.readline().strip()
 
-            with self.lock:
-                if line.startswith(b'S'):
-                    self.steering_pwm_in = int(line[1:])
-                if line.startswith(b'T'):
-                    self.throttle_pwm_in = int(line[1:])
+            if line.startswith(b'S'):
+                self.steering_pwm_in = int(line[1:])
+            if line.startswith(b'T'):
+                self.throttle_pwm_in = int(line[1:])
 
+            with self.lock:
+                throttle_pwm_cap = utils.map_range(self.max_throttle, 0, 1, self.throttle_stopped_pwm, self.throttle_forward_pwm)
+                self.throttle_pwm_out = max(self.throttle_pwm_in, throttle_pwm_cap)
                 if self.mode == 'user':
                     self.steering_pwm_out = self.steering_pwm_in
-                    self.throttle_pwm_out = self.throttle_pwm_in
 
     def message_out_loop(self):
         while True:
