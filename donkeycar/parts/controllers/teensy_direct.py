@@ -83,8 +83,9 @@ class TeensyDirectController():
         with self.lock:
             steering = self.pwm_to_value(self.steering_pwm_out, self.steering_left_pwm, self.steering_neutral_pwm, self.steering_right_pwm)
             throttle = self.pwm_to_value(self.throttle_pwm_out, self.throttle_reverse_pwm, self.throttle_stopped_pwm, self.throttle_forward_pwm)
+            recording = self.recording and (throttle > 0.1)  # record only when it moves
 
-        return steering, throttle, self.drive_mode, self.recording
+        return steering, throttle, self.drive_mode, recording
 
     def message_in_loop(self):
         while True:
@@ -92,8 +93,10 @@ class TeensyDirectController():
 
             if line.startswith(b'S'):
                 self.steering_pwm_in = int(line[1:])
+                print(str(datetime.datetime.utcnow()) + " IN: " + str(self.steering_pwm_in))
             if line.startswith(b'T'):
                 self.throttle_pwm_in = int(line[1:])
+                print(str(datetime.datetime.utcnow()) + " IN: " + str(self.throttle_pwm_in))
 
             with self.lock:
                 throttle_pwm_cap = utils.map_range(self.max_throttle, 0, 1, self.throttle_stopped_pwm, self.throttle_forward_pwm)
@@ -107,10 +110,10 @@ class TeensyDirectController():
                 steering_pwm = self.steering_pwm_out
                 throttle_pwm = self.throttle_pwm_out
 
-            a = 'S' + str(steering_pwm) + '\n'; 
-            print("OUT: " + a)
+            a = 'S' + str(steering_pwm) + '\n';
+            print(str(datetime.datetime.utcnow()) + " OUT: " + a)
             t = 'T' + str(throttle_pwm) + '\n'
-            print("OUT: " + t)
+            print(str(datetime.datetime.utcnow()) + " OUT: " + t)
             self.serial_bus.write(a.encode())
             self.serial_bus.write(t.encode())
 
