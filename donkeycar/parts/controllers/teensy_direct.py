@@ -6,6 +6,7 @@ import json
 import time
 import threading
 import serial
+import datetime
 
 import requests
 
@@ -117,7 +118,7 @@ class TeensyDirectController():
             self.serial_bus.write(a.encode())
             self.serial_bus.write(t.encode())
 
-            time.sleep(0.01)
+            time.sleep(0.015)
             
 
 
