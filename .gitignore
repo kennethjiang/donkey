@@ -11,4 +11,5 @@ lag_log.csv
 .cache
 site/*
 build
-
+*.log
+.vagrant
