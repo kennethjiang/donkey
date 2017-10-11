@@ -35,7 +35,7 @@ class TeensyDirectController():
         self.throttle_reverse_pwm=throttle_reverse_pwm
 
         self.lock = threading.RLock()
-        #self.serial_bus = serial.Serial('/dev/ttyACM0', 115200, timeout = 0.05)
+        self.serial_bus = serial.Serial('/dev/ttyACM0', 115200, timeout = 0.05)
 
         self.steering_pwm_in = self.steering_neutral_pwm
         self.throttle_pwm_in = self.throttle_stopped_pwm
@@ -98,7 +98,7 @@ class TeensyDirectController():
             with self.lock:
                 throttle_pwm_cap = utils.map_range(self.max_throttle, 0, 1, self.throttle_stopped_pwm, self.throttle_forward_pwm)
                 self.throttle_pwm_out = max(self.throttle_pwm_in, throttle_pwm_cap)
-                if self.mode == 'user':
+                if self.drive_mode == 'user':
                     self.steering_pwm_out = self.steering_pwm_in
 
     def message_out_loop(self):
@@ -113,6 +113,9 @@ class TeensyDirectController():
             print("OUT: " + t)
             self.serial_bus.write(a.encode())
             self.serial_bus.write(t.encode())
+
+            time.sleep(0.01)
+            
 
 
 class TeensyWebServer(tornado.web.Application):
@@ -136,7 +139,7 @@ class TeensyWebServer(tornado.web.Application):
 
         settings = {'debug': True}
 
-        super().__init__(handlers, **settings)
+        super().__init__(handlers) # , **settings)
 
     def start(self, port=8887):
         print('Starting Donkey Server on part {0}...'.format(port))
