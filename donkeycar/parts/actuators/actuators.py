@@ -315,35 +315,14 @@ class Teensy:
 Teensy PWM using classic servo protocol. roughly 1000-2000 us pulse width. 1500 us is netural.
 '''
 
-class TeensyDirectThrottle:
-    def __init__(self, teensy=None,
-                       max_pulse=300,
-                       min_pulse=490,
-                       zero_pulse=350):
-
-        self.max_pulse = max_pulse
-        self.min_pulse = min_pulse
-        self.zero_pulse = zero_pulse
-
-    def run(self, pulse):
-        pass
-
-    def shutdown(self):
-        pass
-
+# No need for throttle actuator as it is currently not going through prediction
 
 class TeensyDirectSteering:
-    def __init__(self, teensy=None,
-                       left_pulse=1000,
-                       neutral_pulse=1500,
-                       right_pulse=2000):
-        self.teensy= teensy
-        self.left_pulse = left_pulse
-        self.neutral_pulse = neutral_pulse
-        self.right_pulse = right_pulse
+    def __init__(self, controller=None):
+        self.controller = controller
 
-    def run(self, pulse):
-        pass
+    def run(self, angle):
+        self.controller.set_angle(angle)
 
     def shutdown(self):
         pass

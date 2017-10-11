@@ -18,22 +18,49 @@ from ... import utils
 
 class TeensyDirectController():
     
-    def __init__(self, angle_pwm_neutral=1500, throttle_pwm_neutral=1500):
+    def __init__(self,
+            steering_left_pwm=1000,
+            steering_neutral_pwm=1500,
+            steering_right_pwm=2000,
+            throttle_forward_pwm=1000,
+            throttle_stopped_pwm=1500,
+            throttle_reverse_pwm=2000
+            ):
+
+        self.steering_left_pwm=steering_left_pwm
+        self.steering_neutral_pwm=steering_neutral_pwm
+        self.steering_right_pwm=steering_right_pwm
+        self.throttle_forward_pwm=throttle_forward_pwm
+        self.throttle_stopped_pwm=throttle_stopped_pwm
+        self.throttle_reverse_pwm=throttle_reverse_pwm
 
         self.lock = threading.RLock()
         #self.serial_bus = serial.Serial('/dev/ttyACM0', 115200, timeout = 0.05)
 
-        self.angle_pwm_in = angle_pwm_neutral
-        self.throttle_pwm_in = throttle_pwm_neutral
+        self.steering_pwm_in = self.steering_neutral_pwm
+        self.throttle_pwm_in = self.throttle_stopped_pwm
         self.max_throttle = 0.25
         self.drive_mode = 'user'
         self.recording = False
 
 		#Critical sections that should be guarded by lock
-        self.angle_pwm_out = angle_pwm_neutral
-        self.throttle_pwm_out = throttle_pwm_neutral
+        with self.lock:
+            self.steering_pwm_out = self.steering_neutral_pwm
+            self.throttle_pwm_out = self.throttle_stopped_pwm
 
-        
+    def set_angle(self, angle):
+        if self.drive_mode == 'user':  # Ignore predicted value when in user mode
+            return;
+
+        with self.lock:
+            self.steering_pwm_out = self.angle_to_pwm(angle)
+
+    def angle_to_pwm(self, angle):
+        if angle >= 0:
+            return utils.map_range(angle, 0, 1, self.steering_neutral_pwm, self.steering_right_pwm)
+        else:
+            return utils.map_range(angle, 0, -1, self.steering_neutral_pwm, self.steering_left_pwm)
+
     def update(self):
         msg_in_thread = threading.Thread(target=self.message_in_loop)
         msg_in_thread.daemon = True
@@ -46,14 +73,14 @@ class TeensyDirectController():
         TeensyWebServer(self).start()
 
 
-    def run_threaded(self, what):
+    def run_threaded(self, img_in):
         ''' 
         Return the last state given from the remote server.
         '''
         
         #return last returned last remote response.
         #return self.angle, self.throttle, self.mode, self.recording
-        return 0, 0, 'user', False
+        return 0.1, 0.1, self.drive_mode, self.recording
 
     def message_in_loop(self):
         while True:
@@ -61,21 +88,21 @@ class TeensyDirectController():
 
             with self.lock:
                 if line.startswith(b'S'):
-                    self.angle_pwm_in = int(line[1:])
+                    self.steering_pwm_in = int(line[1:])
                 if line.startswith(b'T'):
                     self.throttle_pwm_in = int(line[1:])
 
                 if self.mode == 'user':
-                    self.angle_pwm_out = self.angle_pwm_in
+                    self.steering_pwm_out = self.steering_pwm_in
                     self.throttle_pwm_out = self.throttle_pwm_in
 
     def message_out_loop(self):
         while True:
             with self.lock:
-                angle_pwm = self.angle_pwm_out
+                steering_pwm = self.steering_pwm_out
                 throttle_pwm = self.throttle_pwm_out
 
-            a = 'S' + str(angle_pwm) + '\n'; 
+            a = 'S' + str(steering_pwm) + '\n'; 
             print("OUT: " + a)
             t = 'T' + str(throttle_pwm) + '\n'
             print("OUT: " + t)
