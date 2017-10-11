@@ -47,8 +47,16 @@ def drive(cfg, model_path=None, use_joystick=False):
     else:        
         #This web controller will create a web server that is capable
         #of managing steering, throttle, and modes, and more.
-        ctr = dk.parts.LocalWebController()
-
+        #ctr = dk.parts.LocalWebController()
+        from donkeycar.parts.controllers import teensy_direct
+        ctr = teensy_direct.TeensyDirectController(
+                                    steering_left_pwm=cfg.STEERING_LEFT_PWM, 
+                                    steering_neutral_pwm=cfg.STEERING_NEUTRAL_PWM, 
+                                    steering_right_pwm=cfg.STEERING_RIGHT_PWM,
+                                    throttle_forward_pwm=cfg.THROTTLE_FORWARD_PWM,
+                                    throttle_stopped_pwm=cfg.THROTTLE_STOPPED_PWM, 
+                                    throttle_reverse_pwm=cfg.THROTTLE_REVERSE_PWM
+                                    )
     
     V.add(ctr, 
           inputs=['cam/image_array'],
@@ -96,19 +104,8 @@ def drive(cfg, model_path=None, use_joystick=False):
           outputs=['angle', 'throttle'])
     
     
-    steering_controller = dk.parts.PCA9685(cfg.STEERING_CHANNEL)
-    steering = dk.parts.PWMSteering(controller=steering_controller,
-                                    left_pulse=cfg.STEERING_LEFT_PWM, 
-                                    right_pulse=cfg.STEERING_RIGHT_PWM)
-    
-    throttle_controller = dk.parts.PCA9685(cfg.THROTTLE_CHANNEL)
-    throttle = dk.parts.PWMThrottle(controller=throttle_controller,
-                                    max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                    zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
-                                    min_pulse=cfg.THROTTLE_REVERSE_PWM)
-    
+    steering = dk.parts.actuators.actuators.TeensyDirectSteering(controller=ctr)
     V.add(steering, inputs=['angle'])
-    V.add(throttle, inputs=['throttle'])
     
     #add tub to save data
     inputs=['cam/image_array',
