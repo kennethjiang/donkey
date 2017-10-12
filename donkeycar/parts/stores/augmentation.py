@@ -1,6 +1,7 @@
 import numpy as np
 import random
 from PIL import Image, ImageDraw
+import cv2
 
 
 def identical(data):
