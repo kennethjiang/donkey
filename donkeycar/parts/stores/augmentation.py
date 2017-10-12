@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import random
 from PIL import Image, ImageDraw
 import cv2
@@ -62,11 +63,17 @@ def random_rects(data):
 WEIGHTED_AUGMENTATIONS = [
         (identical, 10),
         (white_unbalance, 8),
-        (random_rects, 8)
+        (random_rects, 8),
         (brightness, 2)
         ]
 
 def augment(data):
     population = [val for val, cnt in WEIGHTED_AUGMENTATIONS for i in range(cnt)]
     aug = random.choice(population)
-    return aug(data)
+    out = aug(data)
+    #cv2.imwrite("/data/dataset/pics/", out['cam/image_array'])
+    return out
+
+def augmented_factor():
+    population = [val for val, cnt in WEIGHTED_AUGMENTATIONS for i in range(cnt)]
+    return math.ceil( len(population) / WEIGHTED_AUGMENTATIONS[0][1] )  #WEIGHTED_AUGMENTATIONS[0][1] is weight of identical augment
