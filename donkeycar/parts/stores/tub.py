@@ -17,6 +17,8 @@ from PIL import Image
 
 import numpy as np
 from ... import utils
+from .augmentation import augment
+
 
 class Tub(object):
     """
@@ -191,7 +193,7 @@ class Tub(object):
         self.write_json_record(json_data)
         self.current_ix += 1
 
-    def get_record(self, ix):
+    def get_record(self, ix, augmented=False):
 
         json_data = self.get_json_record(ix)
         data={}
@@ -208,8 +210,10 @@ class Tub(object):
 
             data[key] = val
 
-        return data
+        if augmented:
+            data = augment(data)
 
+        return data
 
     def make_file_name(self, key, ext='.png'):
         name = '_'.join([str(self.current_ix), key, ext])
@@ -225,18 +229,18 @@ class Tub(object):
         pass
 
 
-    def record_gen(self, index=None, record_transform=None):
+    def record_gen(self, index=None, record_transform=None, augmented=False):
         if index==None:
             index=self.get_index(shuffled=True)
         for i in index:
-            record = self.get_record(i)
+            record = self.get_record(i, augmented)
             if record_transform:
                 record = record_transform(record)
             yield record
 
     def batch_gen(self, keys=None, index=None, batch_size=128,
-                  record_tranform=None):
-        record_gen = self.record_gen(index, record_tranform)
+                  record_tranform=None, augmented=False):
+        record_gen = self.record_gen(index, record_tranform, augmented)
         if keys==None:
             keys = self.inputs
         while True:
@@ -255,8 +259,8 @@ class Tub(object):
 
 
     def train_gen(self, X_keys, Y_keys, index=None, batch_size=128,
-                  record_transform=None):
-        batch_gen = self.batch_gen(X_keys+Y_keys, index, batch_size, record_transform)
+                  record_transform=None, augmented=False):
+        batch_gen = self.batch_gen(X_keys+Y_keys, index, batch_size, record_transform, augmented)
         while True:
             batch = next(batch_gen)
             X = [batch[k] for k in X_keys]
@@ -271,10 +275,10 @@ class Tub(object):
         val_index = index[train_cutoff:]
     
         train_gen = self.train_gen(X_keys=X_keys, Y_keys=Y_keys, index=train_index, 
-                              batch_size=batch_size, record_transform=record_transform)
+                              batch_size=batch_size, record_transform=record_transform, augmented=True)
         
         val_gen = self.train_gen(X_keys=X_keys, Y_keys=Y_keys, index=val_index, 
-                              batch_size=batch_size, record_transform=record_transform)
+                              batch_size=batch_size, record_transform=record_transform, augmented=False)
         
         return train_gen, val_gen
 
