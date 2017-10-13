@@ -68,6 +68,7 @@ class KerasPilot():
                         verbose=1, 
                         validation_data=val_gen,
                         callbacks=callbacks_list, 
+                        max_queue_size=10,
                         validation_steps=steps*(1.0 - train_split))
         return hist
 
@@ -143,6 +144,7 @@ def default_categorical():
     
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
     model.compile(optimizer='rmsprop',
+    #model.compile(optimizer=keras.optimizers.RMSprop(lr=1.0e-5),
                   loss={'angle_out': 'categorical_crossentropy', 
                         'throttle_out': 'mean_absolute_error'},
                   loss_weights={'angle_out': 0.9, 'throttle_out': .001})
