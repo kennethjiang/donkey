@@ -240,9 +240,7 @@ class Tub(object):
         if index==None:
             index=self.get_index(shuffled=True)
 
-        if augmented:
-            index = index * augmented_factor()
-
+        print(self.path)
         for i in index:
             record = self.get_record(i, augmented)
             if record_transform:
