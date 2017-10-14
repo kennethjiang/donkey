@@ -54,7 +54,7 @@ class TeensyDirectController():
             return;
 
         with self.lock:
-            self.steering_pwm_out = int(self.angle_to_pwm(angle))
+            self.steering_pwm_out = self.bounded_steering_pwm(int(self.angle_to_pwm(angle)))
 
     def angle_to_pwm(self, angle):
         if angle >= 0:
@@ -67,6 +67,12 @@ class TeensyDirectController():
             return utils.map_xrange(pwm, pwm_neutral, pwm_min, 0, -1)
         else:
             return utils.map_xrange(pwm, pwm_neutral, pwm_max, 0, 1)
+
+    def bounded_steering_pwm(self, pwm):
+        if self.steering_left_pwm < self.steering_right_pwm:
+            return np.clip(pwm, self.steering_left_pwm, self.steering_right_pwm)
+        else:
+            return np.clip(pwm, self.steering_right_pwm, self.steering_left_pwm)
 
     def update(self):
         msg_in_thread = threading.Thread(target=self.message_in_loop)
@@ -103,7 +109,7 @@ class TeensyDirectController():
                 throttle_pwm_cap = utils.map_xrange(self.max_throttle, 0, 1, self.throttle_stopped_pwm, self.throttle_forward_pwm)
                 self.throttle_pwm_out = int(max(self.throttle_pwm_in, throttle_pwm_cap))
                 if self.drive_mode == 'user':
-                    self.steering_pwm_out = int(self.steering_pwm_in)
+                    self.steering_pwm_out = self.bounded_steering_pwm(int(self.steering_pwm_in))
 
     def message_out_loop(self):
         while True:
