@@ -189,6 +189,12 @@ def map_range(x, X_min, X_max, Y_min, Y_max):
     return int(y)
 
 
+def map_xrange(x, X_boundary_1, X_boundary_2, Y_boundary_1, Y_boundary_2):
+    if X_boundary_1 <= X_boundary_2:
+        return np.interp(x, [X_boundary_1, X_boundary_2], [Y_boundary_1, Y_boundary_2])
+    else:
+        return np.interp(x, [X_boundary_2, X_boundary_1], [Y_boundary_2, Y_boundary_1])
+
 
 '''
 NETWORKING

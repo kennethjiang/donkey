@@ -6,6 +6,7 @@ import json
 import time
 import threading
 import serial
+import datetime
 
 import requests
 
@@ -53,19 +54,19 @@ class TeensyDirectController():
             return;
 
         with self.lock:
-            self.steering_pwm_out = self.angle_to_pwm(angle)
+            self.steering_pwm_out = int(self.angle_to_pwm(angle))
 
     def angle_to_pwm(self, angle):
         if angle >= 0:
-            return utils.map_range(angle, 0, 1, self.steering_neutral_pwm, self.steering_right_pwm)
+            return utils.map_xrange(angle, 0, 1, self.steering_neutral_pwm, self.steering_right_pwm)
         else:
-            return utils.map_range(angle, 0, -1, self.steering_neutral_pwm, self.steering_left_pwm)
+            return utils.map_xrange(angle, 0, -1, self.steering_neutral_pwm, self.steering_left_pwm)
 
     def pwm_to_value(self, pwm, pwm_min, pwm_neutral, pwm_max):
         if (pwm-pwm_neutral) * (pwm_min-pwm_neutral) > 0: #pwm is between min and neutral
-            return utils.map_range(pwm, pwm_neutral, pwm_min, 0, -1)
+            return utils.map_xrange(pwm, pwm_neutral, pwm_min, 0, -1)
         else:
-            return utils.map_range(pwm, pwm_neutral, pwm_max, 0, 1)
+            return utils.map_xrange(pwm, pwm_neutral, pwm_max, 0, 1)
 
     def update(self):
         msg_in_thread = threading.Thread(target=self.message_in_loop)
@@ -93,16 +94,16 @@ class TeensyDirectController():
 
             if line.startswith(b'S'):
                 self.steering_pwm_in = int(line[1:])
-                print(str(datetime.datetime.utcnow()) + " IN: " + str(self.steering_pwm_in))
+                #print(str(datetime.datetime.utcnow()) + " IN: " + str(self.steering_pwm_in))
             if line.startswith(b'T'):
                 self.throttle_pwm_in = int(line[1:])
-                print(str(datetime.datetime.utcnow()) + " IN: " + str(self.throttle_pwm_in))
+                #print(str(datetime.datetime.utcnow()) + " IN: " + str(self.throttle_pwm_in))
 
             with self.lock:
-                throttle_pwm_cap = utils.map_range(self.max_throttle, 0, 1, self.throttle_stopped_pwm, self.throttle_forward_pwm)
-                self.throttle_pwm_out = max(self.throttle_pwm_in, throttle_pwm_cap)
+                throttle_pwm_cap = utils.map_xrange(self.max_throttle, 0, 1, self.throttle_stopped_pwm, self.throttle_forward_pwm)
+                self.throttle_pwm_out = int(max(self.throttle_pwm_in, throttle_pwm_cap))
                 if self.drive_mode == 'user':
-                    self.steering_pwm_out = self.steering_pwm_in
+                    self.steering_pwm_out = int(self.steering_pwm_in)
 
     def message_out_loop(self):
         while True:
@@ -113,11 +114,11 @@ class TeensyDirectController():
             a = 'S' + str(steering_pwm) + '\n';
             print(str(datetime.datetime.utcnow()) + " OUT: " + a)
             t = 'T' + str(throttle_pwm) + '\n'
-            print(str(datetime.datetime.utcnow()) + " OUT: " + t)
+            #print(str(datetime.datetime.utcnow()) + " OUT: " + t)
             self.serial_bus.write(a.encode())
             self.serial_bus.write(t.encode())
 
-            time.sleep(0.01)
+            time.sleep(0.015)
             
 
 
@@ -185,7 +186,7 @@ class DriveApi(tornado.web.RequestHandler):
     def post(self):
         data = tornado.escape.json_decode(self.request.body)
         self.controller.drive_mode = data['drive_mode']
-        self.controller.max_throttle = data['max_throttle']
+        self.controller.max_throttle = float(data['max_throttle'])
         self.controller.recording = data['recording']
         self.respond_with_json()
 
