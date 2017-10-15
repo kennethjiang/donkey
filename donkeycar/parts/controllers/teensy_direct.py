@@ -7,6 +7,7 @@ import time
 import threading
 import serial
 import datetime
+import numpy as np
 
 import requests
 
@@ -118,7 +119,7 @@ class TeensyDirectController():
                 throttle_pwm = self.throttle_pwm_out
 
             a = 'S' + str(steering_pwm) + '\n';
-            print(str(datetime.datetime.utcnow()) + " OUT: " + a)
+            #print(str(datetime.datetime.utcnow()) + " OUT: " + a)
             t = 'T' + str(throttle_pwm) + '\n'
             #print(str(datetime.datetime.utcnow()) + " OUT: " + t)
             self.serial_bus.write(a.encode())
