@@ -9,6 +9,19 @@ def identical(data):
     return data
 
 
+def reflection(data):
+    data['cam/image_array'] = cv2.flip(data['cam/image_array'], 1)
+    angle = data['user/angle']
+    if angle > 0:
+        angle /= -0.775862
+        angle = math.max(angle, -1)
+    else:
+        angle *= -0.775862
+    data['user/angle'] = angle
+
+    return data
+
+
 def brightness(data):
     img_in = data['cam/image_array']
     image1 = cv2.cvtColor(img_in,cv2.COLOR_RGB2HSV)
@@ -62,9 +75,10 @@ def random_rects(data):
 
 WEIGHTED_AUGMENTATIONS = [
         (identical, 10),
-        (white_unbalance, 8),
-        (random_rects, 8),
-        (brightness, 2)
+        (white_unbalance, 20),
+        (reflection, 10),
+        (random_rects, 20),
+        (brightness, 5)
         ]
 
 def augment(data):
