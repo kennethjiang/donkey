@@ -19,7 +19,7 @@ import keras
 from ... import utils
 from donkeycar.config import load_config
 from donkeycar.tools.fisheye_undistort import undistort
-from donkeycar.parts.stores.augmentation import augment, augmented_factor
+from .augmentation import augment, augmented_factor
 
 
 import donkeycar as dk
@@ -69,7 +69,7 @@ class KerasPilot():
                         verbose=1, 
                         validation_data=val_gen,
                         callbacks=callbacks_list, 
-                        max_queue_size=augmented_factor()*5,
+                        max_queue_size=augmented_factor()*5
                         validation_steps=steps*(1.0 - train_split))
         return hist
 
