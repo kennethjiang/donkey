@@ -18,7 +18,7 @@ from PIL import Image
 
 import numpy as np
 from ... import utils
-from .augmentation import augment, augmented_factor
+from .augmentation import augment
 
 
 class Tub(object):
@@ -239,8 +239,6 @@ class Tub(object):
     def record_gen(self, index=None, record_transform=None, augmented=False):
         if index==None:
             index=self.get_index(shuffled=True)
-
-        print(self.path)
         for i in index:
             record = self.get_record(i, augmented)
             if record_transform:
