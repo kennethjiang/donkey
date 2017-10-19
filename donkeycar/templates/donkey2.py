@@ -20,6 +20,7 @@ import os
 from docopt import docopt
 import donkeycar as dk 
 from donkeycar.visualization import visualize
+from donkeycar.parts.stores.augmentation import augmented_factor
 
 
 def drive(cfg, model_path=None, use_joystick=False):
@@ -177,7 +178,7 @@ def train(cfg, tub_names, model_name, cache):
     total_train = int(total_records * cfg.TRAIN_TEST_SPLIT)
     total_val = total_records - total_train
     print('train: %d, validation: %d' %(total_train, total_val))
-    steps_per_epoch = total_train // cfg.BATCH_SIZE
+    steps_per_epoch = (total_train * augmented_factor()) // cfg.BATCH_SIZE
     print('steps_per_epoch', steps_per_epoch)
 
     kl.train(train_gens, 

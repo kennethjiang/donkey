@@ -19,6 +19,7 @@ import keras
 from ... import utils
 from donkeycar.config import load_config
 from donkeycar.tools.fisheye_undistort import undistort
+from donkeycar.parts.stores.augmentation import augment, augmented_factor
 
 
 import donkeycar as dk
@@ -68,6 +69,7 @@ class KerasPilot():
                         verbose=1, 
                         validation_data=val_gen,
                         callbacks=callbacks_list, 
+                        max_queue_size=augmented_factor()*5,
                         validation_steps=steps*(1.0 - train_split))
         return hist
 
@@ -120,12 +122,12 @@ def default_categorical():
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
     from keras.layers import Activation, Dropout, Flatten, Dense
     
-    img_in = Input(shape=(120, 160, 3), name='img_in')                      # First layer, input layer, Shape comes from camera.py resolution, RGB
+    img_in = Input(shape=(70, 160, 3), name='img_in')                      # First layer, input layer, Shape comes from camera.py resolution, RGB
     x = img_in
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)       # 24 features, 5 pixel x 5 pixel kernel (convolution, feauture) window, 2wx2h stride, relu activation
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)       # 32 features, 5px5p kernel window, 2wx2h stride, relu activatiion
     x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)       # 64 features, 5px5p kernal window, 2wx2h stride, relu
-    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)       # 64 features, 3px3p kernal window, 2wx2h stride, relu
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 3px3p kernal window, 2wx2h stride, relu
     x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 3px3p kernal window, 1wx1h stride, relu
 
     # Possibly add MaxPooling (will make it less sensitive to position in image).  Camera angle fixed, so may not to be needed
@@ -143,6 +145,7 @@ def default_categorical():
     
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
     model.compile(optimizer='rmsprop',
+    #model.compile(optimizer=keras.optimizers.RMSprop(lr=1.0e-5),
                   loss={'angle_out': 'categorical_crossentropy', 
                         'throttle_out': 'mean_absolute_error'},
                   loss_weights={'angle_out': 0.9, 'throttle_out': .001})
