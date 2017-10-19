@@ -14,7 +14,7 @@ def reflection(data):
     angle = data['user/angle']
     if angle > 0:
         angle /= -0.775862
-        angle = math.max(angle, -1)
+        angle = max(angle, -1)
     else:
         angle *= -0.775862
     data['user/angle'] = angle
