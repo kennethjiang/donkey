@@ -48,8 +48,24 @@ def dataset_from_all_tubs(data_path):
         result = result + dataset_from_tub(p, limit=-1)
     return result
 
+# BINS = array([-0.9765672 , -0.22111631, -0.16817142, -0.13134938, -0.10334459,
+#        -0.07650948, -0.04920462, -0.02300015,  0.00720189,  0.03442041,
+#         0.06426511,  0.09369569,  0.12904788,  0.16444255,  0.2016602 ,
+#         0.23998156,  0.28286744,  0.34177643,  0.48355854,  1.        ])
+
+BINS = [-1.0, -0.7962963 , -0.55, -0.31859399, -0.28888889, -0.27279798, -0.2503496 ,
+       -0.22473535, -0.2       , -0.16676868, -0.11454837, -0.0353191 ,
+        0.01857333,  0.07800226,  0.12310686,  0.15539933,  0.17979046,
+        0.19944761,  0.21551724,  0.23020181,  0.26149425,  0.52298851, 0.76, 1.0]
+
+def bin_it(i):
+    r = np.zeros(23)
+    r[i-1] = 1
+    return r
+
 def bin_angle_out(angle_out):
-    return np.array([dk.utils.linear_bin(o) for o in angle_out])
+    digits = np.digitize(angle_out, bins=BINS)
+    return np.asarray([bin_it(i) for i in digits], dtype="float64")
 
 def augment_batch(batch_data):
     for i in range(len(batch_data)):
@@ -114,13 +130,13 @@ def classification_model():
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)       # 32 features, 5px5p kernel window, 2wx2h stride, relu activatiion
     x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)       # 64 features, 5px5p kernal window, 2wx2h stride, relu
     x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 3px3p kernal window, 2wx2h stride, relu
-    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 3px3p kernal window, 1wx1h stride, relu
+#     x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 3px3p kernal window, 1wx1h stride, relu
 
     # Possibly add MaxPooling (will make it less sensitive to position in image).  Camera angle fixed, so may not to be needed
 
     x = Flatten(name='flattened')(x)                                        # Flatten to 1D (Fully connected)
-    x = Dense(200, activation='relu')(x)                                    # Classify the data into 100 features, make all negatives 0
-    x = Dropout(.1)(x)                                                      # Randomly drop out (turn off) 10% of the neurons (Prevent overfitting)
+#     x = Dense(200, activation='relu')(x)                                    # Classify the data into 100 features, make all negatives 0
+#     x = Dropout(.1)(x)                                                      # Randomly drop out (turn off) 10% of the neurons (Prevent overfitting)
     x = Dense(100, activation='relu')(x)                                     # Classify the data into 50 features, make all negatives 0
     x = Dropout(.1)(x)
     x = Dense(50, activation='relu')(x)                                     # Classify the data into 50 features, make all negatives 0
@@ -129,13 +145,13 @@ def classification_model():
     x = Dropout(.1)(x)  
     # Randomly drop out 10% of the neurons (Prevent overfitting)
     #categorical output of the angle
-    angle_out = Dense(15, activation='softmax', name='angle_out')(x)        # Connect every input with every output and output 15 hidden units. Use Softmax to give percentage. 15 categories and find best one based off percentage 0.0-1.0
+    angle_out = Dense(23, activation='softmax', name='angle_out')(x)        # Connect every input with every output and output 15 hidden units. Use Softmax to give percentage. 15 categories and find best one based off percentage 0.0-1.0
 
     #continous output of throttle
     throttle_out = Dense(1, activation='relu', name='throttle_out')(x)      # Reduce to 1 number, Positive number only
 
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
-    model.compile(optimizer='rmsprop',
+    model.compile(optimizer='rmsprop', #keras.optimizers.RMSprop(lr=0.0002),
                   loss={'angle_out': 'categorical_crossentropy',
                         'throttle_out': 'mean_squared_error'},
                   loss_weights={'angle_out': 0.9, 'throttle_out': .001})
@@ -176,14 +192,14 @@ def regression_model():
 
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
 
-    model.compile(optimizer='rmsprop',
-                  loss={'angle_out': 'mean_absolute_error',
+    model.compile(optimizer=keras.optimizers.RMSprop(lr=0.00008),
+                  loss={'angle_out': 'mean_squared_error',
                         'throttle_out': 'mean_squared_error'},
                   loss_weights={'angle_out': 1.0, 'throttle_out': .00})
     return model
 
 
-# In[9]:
+# In[ ]:
 
 if use_regression:
     model = regression_model()
