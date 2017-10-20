@@ -156,8 +156,8 @@ def regression_model():
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
-    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
-    #x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
+    #x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
 
     x = Flatten(name='flattened')(x)
     x = Dense(200, activation='linear')(x)
@@ -176,8 +176,8 @@ def regression_model():
 
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
 
-    model.compile(optimizer='rmsprop',
-                  loss={'angle_out': 'mean_absolute_error',
+    model.compile(optimizer=keras.optimizers.RMSprop(lr=0.00008),
+                  loss={'angle_out': 'mean_squared_error',
                         'throttle_out': 'mean_squared_error'},
                   loss_weights={'angle_out': 1.0, 'throttle_out': .00})
     return model
