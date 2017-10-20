@@ -1,12 +1,13 @@
 
 # coding: utf-8
 
-# In[3]:
+# In[1]:
 
 import donkeycar as dk
 import keras
 import h5py
 import os
+import sys
 import time
 import numpy as np
 import pandas as pd
@@ -15,9 +16,18 @@ from PIL import Image
 from donkeycar.tools.fisheye_undistort import undistort
 from donkeycar.parts.stores.augmentation import augment
 from random import shuffle
-import sys
 
 # In[2]:
+
+#data_dir = '../../donkeycar/d2/data.ws'
+#model_path = '../../donkeycar/d2/models/ws.cls.gen'
+#use_regression = False
+data_dir = sys.argv[1]
+model_path = sys.argv[2]
+use_regression = sys.argv[3] == 'r'
+
+
+# In[3]:
 
 def dataset_from_tub(tub_path, limit=500):
     tub = dk.parts.Tub(tub_path)
@@ -67,8 +77,7 @@ def batch_gen(dataset, batch_size=128, augmented=False, bin_angle=True):
 
 # In[4]:
 
-#dataset = dataset_from_all_tubs('../../donkeycar/d2/data.ws')
-dataset = dataset_from_all_tubs(sys.argv[1])
+dataset = dataset_from_all_tubs(data_dir)
 
 
 # In[5]:
@@ -83,8 +92,12 @@ shuffle(dataset)
 split = int(SPLIT * len(dataset))
 train_set = dataset[0:split]
 val_set = dataset[split:]
-train_gen = batch_gen(train_set, augmented=True, batch_size=BATCH_SIZE)
-val_gen = batch_gen(val_set, augmented=False, batch_size=BATCH_SIZE)
+if use_regression:
+    train_gen = batch_gen(train_set, augmented=True, batch_size=BATCH_SIZE, bin_angle=False)
+    val_gen = batch_gen(val_set, augmented=False, batch_size=BATCH_SIZE, bin_angle=False)
+else:
+    train_gen = batch_gen(train_set, augmented=True, batch_size=BATCH_SIZE, bin_angle=True)
+    val_gen = batch_gen(val_set, augmented=False, batch_size=BATCH_SIZE, bin_angle=True)
 
 
 # In[7]:
@@ -100,19 +113,19 @@ def classification_model():
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)       # 24 features, 5 pixel x 5 pixel kernel (convolution, feauture) window, 2wx2h stride, relu activation
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)       # 32 features, 5px5p kernel window, 2wx2h stride, relu activatiion
     x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)       # 64 features, 5px5p kernal window, 2wx2h stride, relu
-    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)       # 64 features, 3px3p kernal window, 2wx2h stride, relu
-#     x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 3px3p kernal window, 1wx1h stride, relu
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 3px3p kernal window, 2wx2h stride, relu
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 3px3p kernal window, 1wx1h stride, relu
 
     # Possibly add MaxPooling (will make it less sensitive to position in image).  Camera angle fixed, so may not to be needed
 
     x = Flatten(name='flattened')(x)                                        # Flatten to 1D (Fully connected)
-    x = Dense(1000, activation='relu')(x)                                    # Classify the data into 100 features, make all negatives 0
+    x = Dense(200, activation='relu')(x)                                    # Classify the data into 100 features, make all negatives 0
     x = Dropout(.1)(x)                                                      # Randomly drop out (turn off) 10% of the neurons (Prevent overfitting)
-    x = Dense(400, activation='relu')(x)                                     # Classify the data into 50 features, make all negatives 0
-    x = Dropout(.1)(x)
     x = Dense(100, activation='relu')(x)                                     # Classify the data into 50 features, make all negatives 0
-    x = Dropout(.1)(x)  
+    x = Dropout(.1)(x)
     x = Dense(50, activation='relu')(x)                                     # Classify the data into 50 features, make all negatives 0
+    x = Dropout(.1)(x)  
+    x = Dense(10, activation='relu')(x)                                     # Classify the data into 50 features, make all negatives 0
     x = Dropout(.1)(x)  
     # Randomly drop out 10% of the neurons (Prevent overfitting)
     #categorical output of the angle
@@ -131,42 +144,6 @@ def classification_model():
 
 
 # In[8]:
-
-save_best = keras.callbacks.ModelCheckpoint(sys.argv[2],
-                                            monitor='val_loss',
-                                            verbose=1,
-                                            save_best_only=True,
-                                            mode='min')
-
-#stop training if the validation error stops improving.
-early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
-                                           min_delta=.0005,
-                                           patience=10,
-                                           verbose=1,
-                                           mode='auto')
-callbacks_list = [save_best, early_stop]
-
-model = classification_model()
-model.fit_generator(train_gen,
-                        steps_per_epoch=len(train_set)/BATCH_SIZE,
-                        epochs=100,
-                        verbose=1,
-                        validation_data=val_gen,
-                        callbacks=callbacks_list,
-                        validation_steps=(len(val_set)/BATCH_SIZE + 1))
-
-
-# In[23]:
-
-shuffle(dataset)
-split = int(SPLIT * len(dataset))
-train_set = dataset[0:split]
-val_set = dataset[split:]
-train_gen = batch_gen(train_set, augmented=True, batch_size=BATCH_SIZE, bin_angle=False)
-val_gen = batch_gen(val_set, augmented=False, batch_size=BATCH_SIZE, bin_angle=False)
-
-
-# In[10]:
 
 def regression_model():
     from keras.layers import Input, Dense, merge
@@ -204,14 +181,19 @@ def regression_model():
     return model
 
 
-# In[11]:
+# In[9]:
 
-regression_model().summary()
+if use_regression:
+    model = regression_model()
+else:    
+    model = classification_model()
+
+model.summary()
 
 
-# In[25]:
+# In[10]:
 
-save_best = keras.callbacks.ModelCheckpoint("/home/ubuntu/donkeycar/d2/models/ws.nb.3fc_l1",
+save_best = keras.callbacks.ModelCheckpoint(model_path,
                                             monitor='val_loss',
                                             verbose=1,
                                             save_best_only=True,
@@ -220,15 +202,11 @@ save_best = keras.callbacks.ModelCheckpoint("/home/ubuntu/donkeycar/d2/models/ws
 #stop training if the validation error stops improving.
 early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                                            min_delta=.000005,
-                                           patience=5,
+                                           patience=10,
                                            verbose=1,
                                            mode='auto')
-
-tensor_board = keras.callbacks.TensorBoard(log_dir="/home/ubuntu/donkeycar/d2/logs/{0}".format(time.time()), histogram_freq=1, write_graph=True, write_images=True)
-
 callbacks_list = [save_best, early_stop]
 
-model = regression_model()
 model.fit_generator(train_gen,
                         steps_per_epoch=len(train_set)/BATCH_SIZE,
                         epochs=100,
