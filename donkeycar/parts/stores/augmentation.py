@@ -74,10 +74,7 @@ def random_rects(data):
 
 WEIGHTED_AUGMENTATIONS = [
         (identical, 10),
-        (white_unbalance, 20),
-        (reflection, 10),
-        (random_rects, 20),
-        (brightness, 5)
+        (reflection, 10)
         ]
 
 def augment(data):
