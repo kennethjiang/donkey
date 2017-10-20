@@ -13,6 +13,7 @@ import datetime
 import random
 from donkeycar.tools.fisheye_undistort import undistort
 import itertools
+import cv2
 
 from PIL import Image
 
@@ -214,6 +215,7 @@ class Tub(object):
                 img = Image.open(os.path.join(self.path, val))
                 val = np.array(img)
                 val = undistort(val, balance=0.55)[9:79,:,:]
+                val = cv2.cvtColor(val,cv2.COLOR_RGB2YCrCb)
 
             data[key] = val
 
