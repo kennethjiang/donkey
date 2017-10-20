@@ -81,8 +81,6 @@ class KerasCategorical(KerasPilot):
             self.model = default_categorical()
         
     def run(self, img_arr):
-        if self.mask is not None:
-            img_arr = utils.mask_image_array(img_arr, self.mask)
         img_arr = undistort(img_arr, balance=0.55)[9:79,:,:]
 
         img_arr = img_arr.reshape((1,) + img_arr.shape)
@@ -101,8 +99,6 @@ class KerasLinear(KerasPilot):
         else:
             self.model = default_linear()
     def run(self, img_arr):
-        if self.mask is not None:
-            img_arr = utils.mask_image_array(img_arr, self.mask)
         img_arr = undistort(img_arr, balance=0.55)[9:79,:,:]
 
         img_arr = img_arr.reshape((1,) + img_arr.shape)
