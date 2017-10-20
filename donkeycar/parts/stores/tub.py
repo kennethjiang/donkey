@@ -213,7 +213,7 @@ class Tub(object):
             elif typ == 'image_array':
                 img = Image.open(os.path.join(self.path, val))
                 val = np.array(img)
-		if self.mask is not None:
+                if self.mask is not None:
                      val = utils.mask_image_array(val, self.mask)
 
             data[key] = val
