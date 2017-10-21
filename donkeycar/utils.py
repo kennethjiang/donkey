@@ -162,7 +162,7 @@ BINS = [-1.0, -0.7962963 , -0.55, -0.31859399, -0.28888889, -0.27279798, -0.2503
 
 
 def linear_unbin(arr):
-    i = np.argmax(angled_binned)
+    i = np.argmax(arr)
     return (BINS[i] + BINS[i+1])/2.0
 
 
