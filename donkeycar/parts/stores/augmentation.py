@@ -2,6 +2,7 @@ import numpy as np
 import random
 from PIL import Image, ImageDraw
 import cv2
+from donkeycar.tools.fisheye_undistort import undistort
 
 
 def identical(data):
@@ -9,6 +10,7 @@ def identical(data):
 
 
 def reflection(data):
+    data['cam/image_array'] = undistort(data['cam/image_array'], balance=0.55)[9:79,:,:]
     data['cam/image_array'] = cv2.flip(data['cam/image_array'], 1)
     angle = data['user/angle']
     if angle > 0:
@@ -22,6 +24,7 @@ def reflection(data):
 
 
 def brightness(data):
+    data['cam/image_array'] = undistort(data['cam/image_array'], balance=0.55)[9:79,:,:]
     img_in = data['cam/image_array']
     image1 = cv2.cvtColor(img_in,cv2.COLOR_RGB2HSV)
     image1 = np.array(image1, dtype = np.float64)
@@ -34,6 +37,7 @@ def brightness(data):
 
 
 def white_unbalance(data):
+    data['cam/image_array'] = undistort(data['cam/image_array'], balance=0.55)[9:79,:,:]
     img_in = data['cam/image_array']
     # Adjust white balance.
     min_channel_high_end = 0.25
@@ -57,6 +61,7 @@ def white_unbalance(data):
     return data
 
 def random_rects(data):
+    data['cam/image_array'] = undistort(data['cam/image_array'], balance=0.55)[9:79,:,:]
     img_in = data['cam/image_array']
     # Draw random rectangles over the image so we don't overfit to one feature.
     w = img_in.shape[1]
@@ -71,12 +76,29 @@ def random_rects(data):
     data['cam/image_array'] = np.asarray(img)
     return data
 
+def rotate_10_degree_left(data):
+    img_in = data['cam/image_array']
+    
+    src = np.array([(661, 526), (872,523), (917,647), (623,658)], dtype = "float32")
+    dst = np.array([(609,541), (824,512), (877,625), (581,685)], dtype = "float32")
+    src = src/5
+    dst = dst/5
+    M = cv2.getPerspectiveTransform(src, dst)
+    img_in = cv2.resize(img_in, (160*2, 120*2), interpolation=cv2.INTER_LINEAR)
+    img_in = undistort(img_in, balance=0.9)
+    img_out = cv2.warpPerspective(img_in, M, (320, 240))
+    img_out = img_out[60:152, 34:244,:]
+    data['cam/image_array'] = cv2.resize(img_out, (160,70), interpolation=cv2.INTER_LINEAR)
+    data['user/angle'] = min(1.0, data['user/angle'] + 0.06)
+    return data
+
 
 WEIGHTED_AUGMENTATIONS = [
         (identical, 10),
         (white_unbalance, 20),
         (reflection, 10),
         (random_rects, 20),
+        (rotate_10_degree_left, 10),
         (brightness, 5)
         ]
 

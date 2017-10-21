@@ -65,7 +65,7 @@ def batch_gen(dataset, batch_size=128, augmented=False, bin_angle=True):
                    'user/angle': data[1],
                    'user/throttle': data[2]}
                 if augmented:
-                    dasta = augment(data)
+                    augment(data)
             
                 batch.append(data)
             X = np.array([d['cam/image_array'] for d in batch])
