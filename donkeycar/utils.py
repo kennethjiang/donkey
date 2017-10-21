@@ -149,22 +149,22 @@ functions to help converte between floating point numbers and categories.
 
 def linear_bin(a):
     a = a + 1
-    b = round(a / (2/14))
-    arr = np.zeros(15)
+    b = round(a / (2/24))
+    arr = np.zeros(25)
     arr[int(b)] = 1
     return arr
 
 
 def linear_unbin(arr):
     b = np.argmax(arr)
-    a = b *(2/14) - 1
+    a = b *(2/24) - 1
     return a
 
 
 def bin_Y(Y):
     d = []
     for y in Y:
-        arr = np.zeros(15)
+        arr = np.zeros(25)
         arr[linear_bin(y)] = 1
         d.append(arr)
     return np.array(d) 
