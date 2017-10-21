@@ -135,7 +135,7 @@ def classification_model():
     throttle_out = Dense(1, activation='relu', name='throttle_out')(x)      # Reduce to 1 number, Positive number only
 
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
-    model.compile(optimizer='rmsprop',
+    model.compile(optimizer=keras.optimizers.RMSprop(lr=0.0002),
                   loss={'angle_out': 'categorical_crossentropy',
                         'throttle_out': 'mean_squared_error'},
                   loss_weights={'angle_out': 0.9, 'throttle_out': .001})
@@ -176,7 +176,7 @@ def regression_model():
 
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
 
-    model.compile(optimizer='rmsprop',
+    model.compile(optimizer=keras.optimizers.RMSprop(lr=0.00008), #'rmsprop',
                   loss={'angle_out': 'mean_absolute_error',
                         'throttle_out': 'mean_squared_error'},
                   loss_weights={'angle_out': 1.0, 'throttle_out': .00})
